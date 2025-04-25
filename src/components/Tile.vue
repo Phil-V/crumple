@@ -4,6 +4,7 @@
  */
 
 import TileData from '@/models/TileData'
+import FileSize from './FileSize.vue'
 
 defineProps({
   tile: {
@@ -20,7 +21,7 @@ defineProps({
       backgroundImage: 'url(' + tile.data + ')',
     }"
   >
-    {{ tile.id }}
+    {{ tile.id }} <FileSize :bytes="tile.fileSize" />
   </div>
 </template>
 

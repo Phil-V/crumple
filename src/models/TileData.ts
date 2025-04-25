@@ -20,6 +20,16 @@ class TileData {
       }
     })
   }
+  get fileSize(): number {
+    // Calculate the file size in bytes
+    // Ignore MIME type and padding
+    // data:image/jpeg;base64,...==
+    const length = this.data.length - (this.data.indexOf(',') + 1)
+    let bytes = (length / 4) * 3
+    if (this.data.slice(-2) === '==') bytes -= 2
+    else if (this.data.slice(-1) === '=') bytes -= 1
+    return bytes
+  }
 }
 
 export default TileData

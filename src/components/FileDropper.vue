@@ -78,7 +78,7 @@ onUnmounted(() => {
       :accept="props.accept"
       @change="filesHandler"
     />
-    <label for="dropzone" :class="{ modal: dragging }">Drop files here!</label>
+    <label for="dropzone" :class="{ modal: dragging }"><span>Drop files here!</span></label>
   </main>
 </template>
 
@@ -105,5 +105,11 @@ label.modal {
   font-weight: bold;
   font-size: large;
   z-index: 2;
+}
+label span {
+  visibility: hidden;
+}
+label.modal span {
+  visibility: visible;
 }
 </style>

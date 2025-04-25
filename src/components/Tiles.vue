@@ -3,13 +3,15 @@
  * Manage a collection of uploaded images
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { jsPDF } from 'jspdf'
 import TileData from '@/models/TileData'
 import FileDropper from './FileDropper.vue'
 import Tile from './Tile.vue'
+import FileSize from './FileSize.vue'
 
 const tiles = ref<TileData[]>([])
+const totalSize = computed(() => tiles.value.reduce((acc, tile) => acc + tile.fileSize, 0))
 
 /** Use the FileReader api to turn files into base64 encoded strings */
 function dataify(file: File): Promise<FileReader['result']> {
@@ -40,8 +42,10 @@ async function filesHandler(...files: File[]) {
   })
 }
 
+/** Generate a PDF from the image data */
 function generatePDF() {
   // Use millimeters for units
+  const WIDTH = 297
   const doc = new jsPDF({ unit: 'mm' })
   doc.deletePage(1) // delete the default blank page
   tiles.value.map((tile) => {
@@ -49,10 +53,10 @@ function generatePDF() {
     // jsPDF will flip the dimensions automatically according to the orientation
     // and we don't want that
     // https://github.com/parallax/jsPDF/blob/57cbe9499dc9922c1a8dbdd225f9c45364653324/src/jspdf.js#L2741
-    doc.addPage([297, imgRatio * 297], imgRatio > 1 ? 'p' : 'l')
-    doc.addImage(tile.data, 'JPEG', 0, 0, 297, imgRatio * 297, '', 'NONE')
+    doc.addPage([WIDTH, imgRatio * WIDTH], imgRatio > 1 ? 'p' : 'l')
+    doc.addImage(tile.data, 'JPEG', 0, 0, WIDTH, imgRatio * WIDTH, '', 'NONE')
   })
-  doc.save('a4.pdf')
+  doc.save('images.pdf')
 }
 </script>
 
@@ -62,6 +66,10 @@ function generatePDF() {
   <div class="tiles">
     <Tile v-for="tile in tiles" :key="tile.id" :tile="tile" />
   </div>
+  <p class="total-size" v-show="totalSize > 0">
+    Total Size:
+    <FileSize :bytes="totalSize" />
+  </p>
   <button @click="generatePDF">Generate PDF!</button>
 </template>
 
