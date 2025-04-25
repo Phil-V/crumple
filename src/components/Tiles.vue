@@ -4,6 +4,7 @@
  */
 
 import { ref } from 'vue'
+import { jsPDF } from 'jspdf'
 import TileData from '@/models/TileData'
 import FileDropper from './FileDropper.vue'
 import Tile from './Tile.vue'
@@ -35,7 +36,23 @@ async function filesHandler(...files: File[]) {
   )
   Promise.all(tiles.value.map((t) => t.ready)).then(() => {
     // tiles ready
+    console.log(tiles.value)
   })
+}
+
+function generatePDF() {
+  // Use millimeters for units
+  const doc = new jsPDF({ unit: 'mm' })
+  doc.deletePage(1) // delete the default blank page
+  tiles.value.map((tile) => {
+    let imgRatio = tile.imgHeight! / tile.imgWidth!
+    // jsPDF will flip the dimensions automatically according to the orientation
+    // and we don't want that
+    // https://github.com/parallax/jsPDF/blob/57cbe9499dc9922c1a8dbdd225f9c45364653324/src/jspdf.js#L2741
+    doc.addPage([297, imgRatio * 297], imgRatio > 1 ? 'p' : 'l')
+    doc.addImage(tile.data, 'JPEG', 0, 0, 297, imgRatio * 297, '', 'NONE')
+  })
+  doc.save('a4.pdf')
 }
 </script>
 
@@ -45,6 +62,7 @@ async function filesHandler(...files: File[]) {
   <div class="tiles">
     <Tile v-for="tile in tiles" :key="tile.id" :tile="tile" />
   </div>
+  <button @click="generatePDF">Generate PDF!</button>
 </template>
 
 <style scoped>
