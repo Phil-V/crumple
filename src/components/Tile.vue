@@ -18,7 +18,7 @@ defineProps({
   <div
     class="tile"
     :style="{
-      backgroundImage: 'url(' + tile.data + ')',
+      backgroundImage: 'url(' + tile.objectURL + ')',
     }"
   >
     {{ tile.id }} <FileSize :bytes="tile.fileSize" />

@@ -13,16 +13,6 @@ import FileSize from './FileSize.vue'
 const tiles = ref<TileData[]>([])
 const totalSize = computed(() => tiles.value.reduce((acc, tile) => acc + tile.fileSize, 0))
 
-/** Use the FileReader api to turn files into base64 encoded strings */
-function dataify(file: File): Promise<FileReader['result']> {
-  return new Promise((resolve) => {
-    const r = new FileReader()
-    r.onload = () => {
-      resolve(r.result)
-    }
-    r.readAsDataURL(file)
-  })
-}
 
 /** Store submitted files in-memory */
 async function filesHandler(...files: File[]) {
@@ -30,12 +20,11 @@ async function filesHandler(...files: File[]) {
     files
       .filter((file) => file.type.startsWith('image/'))
       .map(async function (file) {
-        return await dataify(file)
+        const buffer = await file.arrayBuffer()
+        return new Blob([new Uint8Array(buffer)], { type: file.type })
       }),
   )
-  tiles.value.push(
-    ...data.filter((s): s is string => typeof s === 'string').map((d) => new TileData(d)),
-  )
+  tiles.value.push(...data.map((d) => new TileData(d)))
   Promise.all(tiles.value.map((t) => t.ready)).then(() => {
     // tiles ready
     console.log(tiles.value)
@@ -43,19 +32,22 @@ async function filesHandler(...files: File[]) {
 }
 
 /** Generate a PDF from the image data */
-function generatePDF() {
+async function generatePDF() {
   // Use millimeters for units
   const WIDTH = 297
   const doc = new jsPDF({ unit: 'mm' })
   doc.deletePage(1) // delete the default blank page
-  tiles.value.map((tile) => {
+
+  for (let i = 0; i < tiles.value.length; i++) {
+    let tile = tiles.value[i]
     let imgRatio = tile.imgHeight! / tile.imgWidth!
     // jsPDF will flip the dimensions automatically according to the orientation
     // and we don't want that
     // https://github.com/parallax/jsPDF/blob/57cbe9499dc9922c1a8dbdd225f9c45364653324/src/jspdf.js#L2741
     doc.addPage([WIDTH, imgRatio * WIDTH], imgRatio > 1 ? 'p' : 'l')
-    doc.addImage(tile.data, 'JPEG', 0, 0, WIDTH, imgRatio * WIDTH, '', 'NONE')
-  })
+    const data = await tile.data.arrayBuffer()
+    doc.addImage(new Uint8Array(data), 'JPEG', 0, 0, WIDTH, imgRatio * WIDTH, '', 'NONE')
+  }
   doc.save('images.pdf')
 }
 </script>

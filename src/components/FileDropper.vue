@@ -3,6 +3,7 @@
  *  Handles files dropped or pasted onto the page, as well as
  *  those selected with the file picker.
  */
+import { ref, onMounted, onUnmounted } from 'vue'
 
 import { ref, defineProps, defineEmits, onMounted, onUnmounted } from 'vue'
 const props = defineProps({
