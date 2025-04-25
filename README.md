@@ -5,19 +5,21 @@ Simple web app to create a pdf document out of a set of images.
 - Runs in-browser
 - Compresses the images to meet a target size if needed
 
-## Project Setup
+## Development
+
+### Install dependencies
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### Run development server
 
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### Type-check, compile and minify for production
 
 ```sh
 npm run build

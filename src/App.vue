@@ -1,9 +1,13 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import Tiles from './components/Tiles.vue'
+</script>
 
 <template>
   <header></header>
 
-  <main></main>
+  <main>
+    <Tiles />
+  </main>
 </template>
 
 <style scoped></style>
