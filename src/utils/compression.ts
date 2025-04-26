@@ -21,6 +21,8 @@ class ImageCollectionCompressor {
       .filter((c) => c.status === CompressionStatus.NoCompressionNeeded)
       .reduce((acc, c) => acc + budget - c.sourceSize, 0)
 
+    console.log('extra budget', extraBudget)
+
     const pendingCompressors = this.compressors
       .filter((c) => c.status === CompressionStatus.Pending)
       .sort((a, b) => b.sourceSize - a.sourceSize) // desc
@@ -32,7 +34,9 @@ class ImageCollectionCompressor {
       await compressor.compress(budget)
     }
 
-    const compressedImages = this.compressors.map((c) => new ImageData(c.compressedData!))
+    const compressedImages = this.compressors.map((c) =>
+      c.compressedData ? new ImageData(c.compressedData) : c.sourceImage,
+    )
     await Promise.all(compressedImages.map((image) => image.ready))
     return compressedImages
   }
@@ -46,10 +50,17 @@ enum CompressionStatus {
   InProgress = 'in progress',
 }
 
+type CompressorOptions = {
+  quality: number
+  width: number // for scaling purposes
+}
+
 class ImageCompressor {
   sourceSize: number
   status: CompressionStatus
   compressedData: Blob | null = null
+  defaultQuality: number = 0.9
+  iterations: number = 0
   constructor(
     public sourceImage: ImageData,
     public targetSize: number,
@@ -67,21 +78,51 @@ class ImageCompressor {
     this.status = CompressionStatus.InProgress
     let size = this.sourceSize
     let blob: Blob | null = null
-    // while (size > target) {
-    blob = await this.compressImage(size)
-    size = blob!.size
-    // }
+    let options: CompressorOptions = {
+      quality: this.defaultQuality,
+      width: this.sourceImage.width!,
+    }
+    while (size > target) {
+      if (this.iterations > 0) {
+        options = this.guessOptions(
+          size,
+          target,
+          this.sourceImage.width!,
+          this.sourceImage.height!,
+          options,
+        )
+      }
+      blob = await this.compressImage(options)
+      size = blob!.size
+      this.iterations++
+      console.log(this.iterations)
+    }
     this.compressedData = blob
     this.status = CompressionStatus.Completed
   }
 
-  async compressImage(size: number): Promise<Blob> {
+  guessOptions(
+    size: number,
+    target: number,
+    width: number,
+    height: number,
+    previousOptions: CompressorOptions,
+  ): CompressorOptions {
+    const newQuality = Math.max(0.1, Math.min(1, previousOptions.quality - 0.1))
+    const newWidth = Math.round(width * 0.9)
+    return {
+      quality: newQuality,
+      width: newWidth,
+    }
+  }
+
+  async compressImage(options: CompressorOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       new Compressor(this.sourceImage.data, {
-        quality: 0.6,
+        ...options,
 
         success(result) {
-          console.log('success', result)
+          console.log('success', result, options)
           resolve(result)
         },
         error(err) {
