@@ -4,13 +4,14 @@ import { jsPDF } from 'jspdf'
 import Images from './components/Images.vue'
 import ImageData from './models/ImageData'
 import FileSize from './components/FileSize.vue'
-import compressImagetoSize from '@/utils/compression'
+import ImageCollectionCompressor from '@/utils/compression'
 
 const images = ref<ImageData[]>([])
+const maxFileSize = ref(10)
 
 const totalSize = computed(() => images.value.reduce((acc, image) => acc + image.fileSize, 0))
 
-/** Generate a PDF from the image data */
+/** Generate a PDF from a collection of image data */
 async function generatePDF(images: ImageData[]) {
   // Use millimeters for units
   const WIDTH = 297
@@ -30,38 +31,13 @@ async function generatePDF(images: ImageData[]) {
   doc.save('images.pdf')
 }
 
-const maxFileSize = ref(10)
-
 async function compressImages(): Promise<ImageData[]> {
   const maxSize = maxFileSize.value * 1024 * 1024
   console.log('maxSize', maxSize, 'total', totalSize.value)
-  if (maxSize > totalSize.value) return images.value // we're good, nothing to compress
-  let budget = maxSize / images.value.length
-  console.log('budget', budget)
-  // TODO: start by converting PNG images to JPEG
-  const underBudget: ImageData[] = images.value.filter((image) => image.fileSize <= budget)
-  const overBudget = images.value
-    .filter((image) => image.fileSize > budget)
-    .sort((a, b) => b.fileSize - a.fileSize) // desc
-  // add the extra space from images under budget
-  const extraSpace = underBudget.reduce((acc, image) => acc + budget - image.fileSize, 0)
-  console.log('extraSpace', extraSpace)
-  budget = extraSpace / overBudget.length + budget
-  console.log('budget', budget)
-  const compressedTiles = await Promise.all(
-    overBudget.map(async (image) => {
-      const compressedData = await compressImagetoSize(
-        image.data,
-        image.width!,
-        image.height!,
-        budget,
-      )
-      const newImage = new ImageData(compressedData)
-      await newImage.ready
-      return newImage
-    }),
-  )
-  return [...underBudget, ...compressedTiles]
+  if (maxSize >= totalSize.value) {
+    return images.value // we're good, nothing to compress
+  }
+  return await new ImageCollectionCompressor(images.value, maxSize).compress()
 }
 
 async function compress() {
