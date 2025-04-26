@@ -11,9 +11,11 @@ class TileData {
   public objectURL: string | null = null
   constructor(public data: Blob) {
     this.id = objectCounter()
-    console.log(data.size)
+    // TODO: remember to add connect-src data: to Content-Security-Policy
+    // or refactor with another approach
     this.objectURL = URL.createObjectURL(data)
     this.ready = new Promise(async (resolve) => {
+      /** Create an image bitmap to calculate the image dimensions */
       const bitmap = await createImageBitmap(data)
       this.imgWidth = bitmap.width
       this.imgHeight = bitmap.height

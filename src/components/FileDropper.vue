@@ -5,7 +5,6 @@
  */
 import { ref, onMounted, onUnmounted } from 'vue'
 
-import { ref, defineProps, defineEmits, onMounted, onUnmounted } from 'vue'
 const props = defineProps({
   accept: { type: String, default: '' },
 })
