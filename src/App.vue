@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import Tiles from './components/Tiles.vue'
+import Images from './components/Images.vue'
 </script>
 
 <template>
   <header></header>
 
   <main>
-    <Tiles />
+    <Images />
   </main>
 </template>
 

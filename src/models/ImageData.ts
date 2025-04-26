@@ -1,12 +1,12 @@
 import objectCounter from '@/utils/objectCounter'
 
-/** TileData model
- * Represents an in-memory image tile
+/** ImageData model
+ * Represents an in-memory image
  */
-class TileData {
+class ImageData {
   public id: number
-  public imgWidth: number | null = null
-  public imgHeight: number | null = null
+  public width: number | null = null
+  public height: number | null = null
   public ready: Promise<void>
   public objectURL: string | null = null
   constructor(public data: Blob) {
@@ -17,8 +17,8 @@ class TileData {
     this.ready = new Promise(async (resolve) => {
       /** Create an image bitmap to calculate the image dimensions */
       const bitmap = await createImageBitmap(data)
-      this.imgWidth = bitmap.width
-      this.imgHeight = bitmap.height
+      this.width = bitmap.width
+      this.height = bitmap.height
       bitmap.close()
       resolve()
     })
@@ -28,4 +28,4 @@ class TileData {
   }
 }
 
-export default TileData
+export default ImageData
