@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf'
 import Images from './components/Images.vue'
 import ImageData from './models/ImageData'
 import FileSize from './components/FileSize.vue'
-import ImageCollectionCompressor from '@/utils/compression'
+import ImageCollectionCompressor from '@/lib/compression'
 
 const images = ref<ImageData[]>([])
 const maxFileSize = ref(10)

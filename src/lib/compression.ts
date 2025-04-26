@@ -1,4 +1,4 @@
-/** Image compression utility */
+/** Image compression library */
 import ImageData from '@/models/ImageData'
 import Compressor from 'compressorjs'
 
