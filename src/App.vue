@@ -33,7 +33,6 @@ async function generatePDF(images: ImageData[]) {
 
 async function compressImages(): Promise<ImageData[]> {
   const maxSize = maxFileSize.value * 1024 * 1024
-  console.log('maxSize', maxSize, 'total', totalSize.value)
   if (maxSize >= totalSize.value) {
     return images.value // we're good, nothing to compress
   }
