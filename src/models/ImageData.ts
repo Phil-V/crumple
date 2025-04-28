@@ -1,4 +1,4 @@
-import objectCounter from '@/utils/objectCounter'
+import { objectCounter } from '@/lib/utils'
 
 /** ImageData model
  * Represents an in-memory image

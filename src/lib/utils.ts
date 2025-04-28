@@ -11,4 +11,4 @@ const objectCounter = (function () {
   return (): number => ids.next().value
 })()
 
-export default objectCounter
+export { objectCounter }
