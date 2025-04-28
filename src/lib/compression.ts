@@ -2,11 +2,6 @@
 import ImageData from '@/models/ImageData'
 import Compressor from 'compressorjs'
 
-import { createJimp } from '@jimp/core'
-import { defaultFormats, defaultPlugins, JimpMime } from 'jimp'
-// import webp from '@jimp/wasm-webp'
-import jpeg from '@jimp/wasm-jpeg'
-
 /** Image collection compressor
  *  Compresses an array of images to a target size in bytes.
  */
@@ -108,7 +103,7 @@ class ImageCompressor {
     }
     // try to iteratively drop the image quality
     while (size > target && options.quality >= this.minQuality) {
-      blob = await this.compressImageJimp(options)
+      blob = await this.compressImage(options)
       size = blob!.size
       console.log('compressed', size, options)
       this.iterations++
@@ -129,7 +124,7 @@ class ImageCompressor {
           quality: this.minQuality,
           width: newWidth,
         }
-        const blobCandidate = await this.compressImageJimp(options)
+        const blobCandidate = await this.compressImage(options)
         size = blobCandidate!.size
         console.log('compressed', size, options)
         if (size <= target) {
@@ -150,7 +145,7 @@ class ImageCompressor {
 
     this.compressedData = blob
     this.status = CompressionStatus.Completed
-    console.log('completed')
+    console.log('completed', this)
   }
 
   /** Round a number down to the nearest multiple of 16
@@ -160,28 +155,8 @@ class ImageCompressor {
     return Math.floor(value / 16) * 16
   }
 
-  async compressImageJimp(options: CompressorOptions): Promise<Blob> {
-    // A custom jimp that supports webp
-    const Jimp = createJimp({
-      formats: [jpeg],
-      plugins: defaultPlugins,
-    })
-
-    const jimpImage = await Jimp.read(await this.sourceImage.data.arrayBuffer())
-    console.log('read successful')
-    debugger
-    jimpImage.resize({ w: options.width })
-    console.log('resize successful')
-    const buf = await jimpImage.getBuffer(JimpMime.jpeg, {
-      quality: Math.floor(options.quality * 100),
-      jpegColorSpace: 'rgb',
-    })
-    const result = new Blob([buf], { type: 'image/jpeg' })
-    return result
-  }
-
   /** Perform the actual compression using compressorjs */
-  async compressImageCompressorjs(options: CompressorOptions): Promise<Blob> {
+  async compressImage(options: CompressorOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       new Compressor(this.sourceImage.data, {
         ...options,
