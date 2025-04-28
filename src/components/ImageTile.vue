@@ -3,7 +3,7 @@
  * Render an in-memory image to a tile
  */
 
-import ImageData from '@/models/ImageData'
+import { ImageData } from '@/models/ImageData'
 import FileSize from './FileSize.vue'
 
 defineProps({
@@ -18,10 +18,10 @@ defineProps({
   <div
     class="image"
     :style="{
-      backgroundImage: 'url(' + image.objectURL + ')',
+      backgroundImage: 'url(' + image.dataUrl + ')',
     }"
   >
-    {{ image.id }} <FileSize :bytes="image.fileSize" />
+    {{ image.id }} <FileSize :bytes="image.size" />
   </div>
 </template>
 

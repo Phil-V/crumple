@@ -1,5 +1,5 @@
 /** Image compression library */
-import ImageData from '@/models/ImageData'
+import { ImageData, ImageBlob } from '@/models/ImageData'
 
 /** Image collection compressor
  *  Compresses an array of images to a target size in bytes.
@@ -10,7 +10,7 @@ class ImageCollectionCompressor {
     public sourceImages: ImageData[],
     public targetSize: number,
   ) {}
-  async compress(): Promise<ImageData[]> {
+  async compress(): Promise<ImageBlob[]> {
     // calculate the target in bytes per image
     // TODO: remove a bit of space to allow for PDF metadata
     let budget = this.targetSize / this.sourceImages.length
@@ -35,11 +35,10 @@ class ImageCollectionCompressor {
       await compressor.compress(budget)
     }
 
-    const compressedImages = this.compressors.map((c) =>
-      c.compressedData ? new ImageData(c.compressedData) : c.sourceImage,
-    )
-    await Promise.all(compressedImages.map((image) => image.ready))
-    return compressedImages
+    const blobs = this.compressors.map((c) => {
+      return c.compressedBlob ?? c.sourceImage.blob
+    })
+    return blobs
   }
 }
 
@@ -64,8 +63,7 @@ type CompressorOptions = {
 class ImageCompressor {
   sourceSize: number
   status: CompressionStatus
-  compressedData: Blob | null = null
-  // 0.90 doesn't seem to work with compressorjs, need to investigate further
+  compressedBlob: ImageBlob | null = null
   defaultQuality: number = 0.89
   minQuality: number = 0.78 // TODO: teak this to a sensible default
   iterations: number = 0
@@ -75,7 +73,7 @@ class ImageCompressor {
     public sourceImage: ImageData,
     public targetSize: number,
   ) {
-    this.sourceSize = this.sourceImage.fileSize
+    this.sourceSize = this.sourceImage.size
     if (this.sourceSize > this.targetSize) {
       this.status = CompressionStatus.Pending
     } else {
@@ -83,7 +81,7 @@ class ImageCompressor {
     }
   }
 
-  /** Compress an image to a target size using compressorjs
+  /** Compress an image to a target size
    * Attempt to degrade quality first, then scale the image down
    * iterate using binary search to find the optimal size.
    */
@@ -92,11 +90,11 @@ class ImageCompressor {
     const qualityStep = 0.05
     this.status = CompressionStatus.InProgress
     let size = this.sourceSize
-    let blob: Blob | null = null
+    let blob: ImageBlob | null = null
     let options: CompressorOptions = {
       quality: this.defaultQuality,
-      width: this.sourceImage.width!,
-      height: this.sourceImage.height!,
+      width: this.sourceImage.width,
+      height: this.sourceImage.height,
     }
     // try to iteratively drop the image quality
     while (size > target && options.quality >= this.minQuality) {
@@ -116,15 +114,15 @@ class ImageCompressor {
       let minScale = 0.0
       let maxScale = 1.0
       for (let i = 0; i < this.maxIterations; i++) {
-        let newWidth = Math.floor(this.sourceImage.width! * currentScale)
-        let newHeight = Math.floor(this.sourceImage.height! * currentScale)
+        let newWidth = Math.floor(this.sourceImage.width * currentScale)
+        let newHeight = Math.floor(this.sourceImage.height * currentScale)
         options = {
           quality: this.minQuality,
           width: newWidth,
           height: newHeight,
         }
         const blobCandidate = await this.compressImage(options)
-        size = blobCandidate!.size
+        size = blobCandidate.size
         console.log('compressed', size, options)
         if (size <= target) {
           blob = blobCandidate
@@ -142,19 +140,20 @@ class ImageCompressor {
       }
     }
 
-    this.compressedData = blob
+    this.compressedBlob = blob
     this.status = CompressionStatus.Completed
     console.log('completed')
   }
 
   /** Resize and compress using an OffscreenCanvas */
-  async compressImage(options: CompressorOptions): Promise<Blob> {
+  async compressImage(options: CompressorOptions): Promise<ImageBlob> {
     // TODO: max size is 4096 on iOS
     const canvas = new OffscreenCanvas(options.width, options.height)
     const ctx = canvas.getContext('2d')!
-    const image = await createImageBitmap(this.sourceImage.data)
+    const image = this.sourceImage.bitmap
     ctx.drawImage(image, 0, 0, options.width, options.height)
-    return canvas.convertToBlob({ type: 'image/jpeg', quality: options.quality })
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: options.quality })
+    return new ImageBlob(blob, options.width, options.height)
   }
 }
 export default ImageCollectionCompressor
