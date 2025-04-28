@@ -1,6 +1,5 @@
 /** Image compression library */
 import ImageData from '@/models/ImageData'
-import Compressor from 'compressorjs'
 
 /** Image collection compressor
  *  Compresses an array of images to a target size in bytes.
@@ -52,11 +51,10 @@ enum CompressionStatus {
   InProgress = 'in progress',
 }
 
-/** Options expected by compressorjs */
 type CompressorOptions = {
   quality: number
-  width: number // for scaling purposes
-  // compressorjs automatically adjusts the height
+  width: number
+  height: number
 }
 
 /**
@@ -69,7 +67,7 @@ class ImageCompressor {
   compressedData: Blob | null = null
   // 0.90 doesn't seem to work with compressorjs, need to investigate further
   defaultQuality: number = 0.89
-  minQuality: number = 0.78
+  minQuality: number = 0.78 // TODO: teak this to a sensible default
   iterations: number = 0
   maxIterations: number = 10
   tolerance: number = 0.85
@@ -97,9 +95,8 @@ class ImageCompressor {
     let blob: Blob | null = null
     let options: CompressorOptions = {
       quality: this.defaultQuality,
-      // compressorjs: changing the quality doesn't
-      // seem to do anything if we don't also change the image size
-      width: this.floorToMacroblock(this.sourceImage.width! - 1),
+      width: this.sourceImage.width!,
+      height: this.sourceImage.height!,
     }
     // try to iteratively drop the image quality
     while (size > target && options.quality >= this.minQuality) {
@@ -119,10 +116,12 @@ class ImageCompressor {
       let minScale = 0.0
       let maxScale = 1.0
       for (let i = 0; i < this.maxIterations; i++) {
-        let newWidth = this.floorToMacroblock(this.sourceImage.width! * currentScale)
+        let newWidth = Math.floor(this.sourceImage.width! * currentScale)
+        let newHeight = Math.floor(this.sourceImage.height! * currentScale)
         options = {
           quality: this.minQuality,
           width: newWidth,
+          height: newHeight,
         }
         const blobCandidate = await this.compressImage(options)
         size = blobCandidate!.size
@@ -145,32 +144,17 @@ class ImageCompressor {
 
     this.compressedData = blob
     this.status = CompressionStatus.Completed
-    console.log('completed', this)
+    console.log('completed')
   }
 
-  /** Round a number down to the nearest multiple of 16
-   *  Might be an unnecessary optimization, needs some testing
-   */
-  floorToMacroblock(value: number): number {
-    return Math.floor(value / 16) * 16
-  }
-
-  /** Perform the actual compression using compressorjs */
+  /** Resize and compress using an OffscreenCanvas */
   async compressImage(options: CompressorOptions): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      new Compressor(this.sourceImage.data, {
-        ...options,
-
-        success(result) {
-          resolve(result)
-        },
-        error(err) {
-          console.log(err.message)
-          reject(err)
-        },
-      })
-    })
+    // TODO: max size is 4096 on iOS
+    const canvas = new OffscreenCanvas(options.width, options.height)
+    const ctx = canvas.getContext('2d')!
+    const image = await createImageBitmap(this.sourceImage.data)
+    ctx.drawImage(image, 0, 0, options.width, options.height)
+    return canvas.convertToBlob({ type: 'image/jpeg', quality: options.quality })
   }
 }
-
 export default ImageCollectionCompressor

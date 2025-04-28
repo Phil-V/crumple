@@ -42,7 +42,6 @@ async function compressImages(): Promise<ImageData[]> {
 async function compress() {
   console.log('compress started!...')
   const compressed = await compressImages()
-  console.log(compressed)
   console.log('generating pdf...')
   generatePDF(compressed)
 }
