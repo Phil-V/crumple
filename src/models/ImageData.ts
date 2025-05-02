@@ -31,6 +31,9 @@ class ImageData {
   }
 }
 
+/** ImageBlob model
+ * Wrapper around Blob storing additional metadata
+ */
 class ImageBlob {
   constructor(
     public blob: Blob,
