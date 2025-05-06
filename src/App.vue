@@ -5,9 +5,11 @@ import Images from './components/Images.vue'
 import { ImageData, ImageBlob } from './models/ImageData'
 import FileSize from './components/FileSize.vue'
 import ImageCollectionCompressor from '@/lib/compression'
+import Compressors from './components/Compressors.vue'
 
 const images = ref<ImageData[]>([])
 const maxFileSize = ref(10)
+const compressors = ref<ImageCollectionCompressor | null>(null)
 
 const totalSize = computed(() => images.value.reduce((acc, image) => acc + image.size, 0))
 
@@ -36,7 +38,8 @@ async function compressImages(): Promise<ImageBlob[]> {
   if (maxSize >= totalSize.value) {
     return images.value.map((image) => image.blob) // we're good, nothing to compress
   }
-  return await new ImageCollectionCompressor(images.value, maxSize).compress()
+  compressors.value = new ImageCollectionCompressor(images.value, maxSize)
+  return await compressors.value.compress()
 }
 
 async function compress() {
@@ -58,6 +61,7 @@ async function compress() {
     </p>
     <input type="number" min="1" max="100" step="1" v-model="maxFileSize" /> (max size in MB)
     <button @click="compress">Compress!</button>
+    <Compressors v-if="compressors" :compressors="compressors" />
   </main>
 </template>
 

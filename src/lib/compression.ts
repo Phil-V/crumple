@@ -1,5 +1,6 @@
 /** Image compression library */
 import { ImageData, ImageBlob } from '@/models/ImageData'
+import { objectCounter } from '@/lib/utils'
 
 /** Image collection compressor
  *  Compresses an array of images to a target size in bytes.
@@ -43,7 +44,7 @@ class ImageCollectionCompressor {
 }
 
 /**
- * Image compressor class
+ * Image compressor class and related interfaces
  * Configure and keep track of the compression process status
  */
 // main class settings
@@ -61,8 +62,8 @@ interface CompressorOptions {
   width: number
   height: number
 }
-
 class ImageCompressor {
+  id: number
   sourceSize: number
   status: CompressionStatus
   compressedBlob: ImageBlob | null = null
@@ -73,14 +74,15 @@ class ImageCompressor {
     minQuality: 0.78, // TODO: teak this to a sensible default
     maxSearchIterations: 10, // max iterations for binary search
     searchTolerance: 0.85, // tolerance for binary search
-    scaleIterations: 8, // number of intermediate scale down steps
     scaleThreshold: 0.66, // threshold for triggering iterative scaling
+    scaleIterations: 8, // number of intermediate scale down steps
   }
   constructor(
     public sourceImage: ImageData,
     public targetSize: number,
     userSettings: Partial<ImageCompressorSettings> = {},
   ) {
+    this.id = objectCounter()
     this.settings = {
       ...ImageCompressor.defaultSettings,
       ...userSettings,
@@ -171,7 +173,7 @@ class ImageCompressor {
       resizeCtx.drawImage(image, 0, 0, image.width, image.height)
       let width = image.width
       let height = image.height
-      const iterations = 8
+      const iterations = this.settings.scaleIterations
       const stepX = Math.floor((width - options.width) / iterations)
       const stepY = Math.floor((height - options.height) / iterations)
       for (let i = 0; i < iterations; i++) {
