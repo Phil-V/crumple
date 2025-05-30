@@ -16,7 +16,7 @@ defineProps({
   <div>
     Compressors:
     <div v-for="compressor in compressors.compressors" :key="compressor.id">
-      {{ compressor.id }} {{ compressor.status }}
+      {{ compressor.id }} {{ compressor.status }} {{ compressor.iterations }}
     </div>
   </div>
 </template>

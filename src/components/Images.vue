@@ -2,6 +2,8 @@
 /** Images component
  * Manage a collection of uploaded images
  */
+import { onMounted, onUnmounted } from 'vue'
+import Sortable, { type SortableEvent } from 'sortablejs'
 
 import { ImageData } from '@/models/ImageData'
 import FileDropper from './FileDropper.vue'
@@ -20,12 +22,25 @@ async function filesHandler(...files: File[]) {
   )
   images.value.push(...newImages)
 }
+
+onMounted(() => {
+  Sortable.create(document.getElementById('images')!, {
+    onUpdate: (event: SortableEvent) => {
+      console.log('shifting element', event.oldIndex, 'to', event.newIndex)
+      images.value.splice(event.newIndex!, 0, images.value.splice(event.oldIndex!, 1)[0])
+    },
+  })
+})
+
+onUnmounted(() => {
+  // TODO
+})
 </script>
 
 <template>
   <p>Drag, paste or select images to add to the document.</p>
   <file-dropper @change="filesHandler" accept="image/"></file-dropper>
-  <div class="images">
+  <div class="images" id="images">
     <ImageTile v-for="image in images" :key="image.id" :image="image" />
   </div>
 </template>
