@@ -192,10 +192,10 @@ class ImageCompressor {
 
 enum CompressionStatus {
   Pending = 'pending',
-  NoCompressionNeeded = 'no compression needed',
+  NoCompressionNeeded = 'no-compression-needed',
   Completed = 'completed',
   Failed = 'failed',
-  InProgress = 'in progress',
+  InProgress = 'in-progress',
 }
 
 export default ImageCollectionCompressor

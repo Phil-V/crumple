@@ -4,7 +4,6 @@
  */
 
 import { ImageData } from '@/models/ImageData'
-import FileSize from './FileSize.vue'
 
 defineProps({
   image: {
