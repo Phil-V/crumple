@@ -13,13 +13,11 @@ class ImageCollectionCompressor {
   ) {}
   async compress(): Promise<ImageBlob[]> {
     // calculate the target in bytes per image
-    // TODO: remove a bit of space to allow for PDF metadata
     let budget = this.targetSize / this.sourceImages.length
 
     this.sourceImages.forEach((image) => {
       this.compressors.push(new ImageCompressor(image, budget))
     })
-    // TODO: start by converting PNG images to JPEG
     // calculate the extra space from images already under budget
     const extraBudget = this.compressors
       .filter((c) => c.status === CompressionStatus.NoCompressionNeeded)

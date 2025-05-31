@@ -51,16 +51,21 @@ async function compress() {
 </script>
 
 <template>
-  <header></header>
-
+  <header><h1>Make a PDF out of images</h1></header>
   <main>
+    <p>Drag, paste or select images to add to the document.</p>
     <Images v-model="images" />
     <p class="total-size" v-show="totalSize > 0">
       Total Size:
       <FileSize :bytes="totalSize" />
     </p>
-    <input type="number" min="1" max="100" step="1" v-model="maxFileSize" /> (max size in MB)
-    <button @click="compress">Compress!</button>
+    <div v-show="images.length > 0">
+      <div>
+        <label for="maxsize">Desired file size:</label>
+        <input id="maxsize" type="number" min="1" max="100" step="1" v-model="maxFileSize" /> MB
+      </div>
+      <button @click="compress">Compress!</button>
+    </div>
     <Compressors v-if="compressors" :compressors="compressors" />
   </main>
 </template>

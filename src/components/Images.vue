@@ -35,13 +35,21 @@ onMounted(() => {
 onUnmounted(() => {
   // TODO
 })
+
+function handleDelete(image: ImageData) {
+  images.value.splice(
+    images.value.findIndex((im) => {
+      return im.id === image.id
+    }),
+    1,
+  )
+}
 </script>
 
 <template>
-  <p>Drag, paste or select images to add to the document.</p>
   <file-dropper @change="filesHandler" accept="image/"></file-dropper>
   <div class="images" id="images">
-    <ImageTile v-for="image in images" :key="image.id" :image="image" />
+    <ImageTile v-for="image in images" :key="image.id" :image="image" @delete="handleDelete" />
   </div>
 </template>
 

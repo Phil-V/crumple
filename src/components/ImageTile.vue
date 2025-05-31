@@ -12,6 +12,10 @@ defineProps({
     required: true,
   },
 })
+
+defineEmits<{
+  delete: [image: ImageData]
+}>()
 </script>
 
 <template>
@@ -21,7 +25,7 @@ defineProps({
       backgroundImage: 'url(' + image.dataUrl + ')',
     }"
   >
-    {{ image.id }} <FileSize :bytes="image.size" />
+    <div class="delete" @click="$emit('delete', image)">x</div>
   </div>
 </template>
 
@@ -31,7 +35,18 @@ defineProps({
   background-size: cover;
   background-position: center;
   background-clip: content-box;
-  width: 125px;
-  height: 125px;
+  width: 100px;
+  height: 100px;
+  position: relative;
+}
+.delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  display: none;
+}
+.image:hover .delete {
+  display: block;
 }
 </style>
