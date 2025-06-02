@@ -1,6 +1,8 @@
 /** Image compression library */
 import { ImageData, ImageBlob } from '@/models/ImageData'
-import { objectCounter } from '@/lib/utils'
+import { objectCounter, TypedWorker } from '@/lib/utils'
+import type { WorkerRequest, WorkerResponse } from './worker-types'
+import ResizeWorker from './worker-resize?worker'
 
 /** Image collection compressor
  *  Compresses an array of images to a target size in bytes.
@@ -51,8 +53,6 @@ interface ImageCompressorSettings {
   minQuality: number
   maxSearchIterations: number
   searchTolerance: number
-  scaleIterations: number
-  scaleThreshold: number
 }
 // options for the compressImage method
 interface CompressorOptions {
@@ -72,8 +72,6 @@ class ImageCompressor {
     minQuality: 0.78, // TODO: teak this to a sensible default
     maxSearchIterations: 10, // max iterations for binary search
     searchTolerance: 0.85, // tolerance for binary search
-    scaleThreshold: 0.66, // threshold for triggering iterative scaling
-    scaleIterations: 8, // number of intermediate scale down steps
   }
   constructor(
     public sourceImage: ImageData,
@@ -158,35 +156,18 @@ class ImageCompressor {
     console.log('completed')
   }
 
-  /** Resize and compress using an OffscreenCanvas */
+  /** Resize and compress using a service worker and OffscreenCanvas */
   async compressImage(image: ImageBitmap, options: CompressorOptions): Promise<ImageBlob> {
-    // TODO: max size is 4096 on iOS
-    const resultCanvas = new OffscreenCanvas(options.width, options.height)
-    const resultCtx = resultCanvas.getContext('2d')!
-    // when scaling down dramatically, draw the image multiple times and scale down by increments
-    // slower but produces better image quality
-    if (options.width < image.width * this.settings.scaleThreshold) {
-      const resizeCanvas = new OffscreenCanvas(image.width, image.height)
-      const resizeCtx = resizeCanvas.getContext('2d')!
-      resizeCtx.drawImage(image, 0, 0, image.width, image.height)
-      let width = image.width
-      let height = image.height
-      const iterations = this.settings.scaleIterations
-      const stepX = Math.floor((width - options.width) / iterations)
-      const stepY = Math.floor((height - options.height) / iterations)
-      for (let i = 0; i < iterations; i++) {
-        resizeCtx.drawImage(resizeCanvas, 0, 0, width, height, 0, 0, width - stepX, height - stepY)
-        console.log('intermediate resizing', width, height)
-        width -= stepX
-        height -= stepY
-      }
-      resultCtx.drawImage(resizeCanvas, 0, 0, width, height, 0, 0, options.width, options.height)
+    const worker = new TypedWorker<WorkerRequest, WorkerResponse>(new ResizeWorker())
+    const response = await worker.requestResponse({
+      payload: { image, options },
+    })
+    worker.terminate()
+    if (response.type === 'resize') {
+      return new ImageBlob(response.payload.blob, options.width, options.height)
     } else {
-      resultCtx.drawImage(image, 0, 0, options.width, options.height)
+      throw new Error(response.error)
     }
-
-    const blob = await resultCanvas.convertToBlob({ type: 'image/jpeg', quality: options.quality })
-    return new ImageBlob(blob, options.width, options.height)
   }
 }
 
@@ -199,3 +180,4 @@ enum CompressionStatus {
 }
 
 export default ImageCollectionCompressor
+export type { CompressorOptions }
