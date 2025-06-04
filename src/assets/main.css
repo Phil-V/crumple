@@ -1,12 +1,14 @@
 /* Main stylesheet and entry point */
 
-@layer reset,
-  settings,      /* Colors, typography */
-  structure,     /* Body, header, main, footer */
-  components,    /* UI building blocks */
-  /* adjustments,   /* Area-specific tweaks */
-  /* screens,       /* Media query handling */
-  /* overrides      /* Final overrides */
+@layer reset, settings, structure, components, adjustments, screens, overrides;
+/** Layer structure */
+/* Reset:          /* Strip browser defaults */
+/* Settings:       /* Colors, typography */
+/* Structure:      /* Body, header, main, footer */
+/* Components:     /* UI building blocks */
+/* Adjustments:    /* Area-specific tweaks */
+/* Screens:        /* Media query handling */
+/* Overrides:      /* Final overrides */
 
 @import './reset.css' layer(reset);
 @import './settings.css' layer(settings);
