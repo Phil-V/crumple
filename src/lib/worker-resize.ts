@@ -1,8 +1,8 @@
-/** Image resizing web worker */
-
+/** Worker dedicated to image resizing */
 import type { CompressorOptions } from '@/lib/compression'
 import type { WorkerResponse, WorkerRequest } from './worker-types'
 
+/** Main worker entrypoint */
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const req = event.data.payload
   const blob = await compressImage(req.image, req.options)
@@ -10,12 +10,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     type: 'resize',
     payload: { blob },
   }
+  // Send result back to the main thread
   self.postMessage(message)
 }
 
 const SCALE_THRESHOLD = 0.9 // threshold for triggering iterative scaling
 
-/** Resize and compress using an OffscreenCanvas */
+/** Resize and compress images using an OffscreenCanvas */
 async function compressImage(image: ImageBitmap, options: CompressorOptions): Promise<Blob> {
   // TODO: max size is 4096 on iOS
   const resultCanvas = new OffscreenCanvas(options.width, options.height)

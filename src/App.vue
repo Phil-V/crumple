@@ -1,37 +1,19 @@
 <script setup lang="ts">
+/** App root component */
+
 import { ref, computed } from 'vue'
-import { jsPDF } from 'jspdf'
-import Images from './components/Images.vue'
 import { ImageData, ImageBlob } from './models/ImageData'
-import FileSize from './components/FileSize.vue'
 import ImageCollectionCompressor from '@/lib/compression'
-import Compressors from './components/Compressors.vue'
+import generatePDF from '@/lib/pdf'
+import Images from '@/components/Images.vue'
+import FileSize from '@/components/FileSize.vue'
+import Compressors from '@/components/Compressors.vue'
 
 const images = ref<ImageData[]>([])
 const maxFileSize = ref(10)
 const compressors = ref<ImageCollectionCompressor | null>(null)
 
 const totalSize = computed(() => images.value.reduce((acc, image) => acc + image.size, 0))
-
-/** Generate a PDF from a collection of image data */
-async function generatePDF(images: ImageBlob[]) {
-  // Use millimeters for units
-  const WIDTH = 297
-  const doc = new jsPDF({ unit: 'mm' })
-  doc.deletePage(1) // delete the default blank page
-
-  for (let i = 0; i < images.length; i++) {
-    const image = images[i]
-    const ratio = image.height / image.width
-    // jsPDF will flip the dimensions automatically according to the orientation
-    // and we don't want that
-    // https://github.com/parallax/jsPDF/blob/57cbe9499dc9922c1a8dbdd225f9c45364653324/src/jspdf.js#L2741
-    doc.addPage([WIDTH, ratio * WIDTH], ratio > 1 ? 'p' : 'l')
-    const data = await image.blob.arrayBuffer()
-    doc.addImage(new Uint8Array(data), 'JPEG', 0, 0, WIDTH, ratio * WIDTH, '', 'NONE')
-  }
-  doc.save('images.pdf')
-}
 
 async function compressImages(): Promise<ImageBlob[]> {
   const maxSize = maxFileSize.value * 1024 * 1024

@@ -1,3 +1,5 @@
+/** Define shared types for the web worker and the compression lib */
+
 import type { CompressorOptions } from './compression'
 
 export interface ResizeWorkerRequest {

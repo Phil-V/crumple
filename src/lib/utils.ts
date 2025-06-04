@@ -1,4 +1,4 @@
-/* Misc. utility functions */
+/** Misc. utility functions */
 
 /** Generate IDs sequentially */
 const objectCounter = (function () {
@@ -13,7 +13,7 @@ const objectCounter = (function () {
   return (): number => ids.next().value
 })()
 
-/** */
+/** Typed wrapper for web workers */
 class TypedWorker<TRequest, TResponse extends { type: string }> {
   private worker: Worker
 

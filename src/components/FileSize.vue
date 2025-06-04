@@ -20,6 +20,7 @@ function formatFileSize(bytes: number, decimalPoint = 1) {
   return `${calculatedSize} ${sizes[unitIndex]}`
 }
 
+/** Set up computed property */
 const formattedFileSize = computed(() => formatFileSize(props.bytes))
 </script>
 
