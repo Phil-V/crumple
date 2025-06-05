@@ -2,12 +2,20 @@
 import { jsPDF } from 'jspdf'
 import { ImageBlob } from '@/models/ImageData'
 
+export interface PdfOptions {
+  title: string | null
+}
+
 /** Generate a PDF from a collection of image data */
-async function generatePDF(images: ImageBlob[]) {
+async function generatePDF(images: ImageBlob[], options: PdfOptions) {
   // Use millimeters for units
   const WIDTH = 297
   const doc = new jsPDF({ unit: 'mm' })
   doc.deletePage(1) // delete the default blank page
+
+  if (options.title) {
+    doc.setProperties({ title: options.title })
+  }
 
   for (let i = 0; i < images.length; i++) {
     const image = images[i]
