@@ -15,7 +15,7 @@ import PdfOptionsForm from '@/components/PdfOptionsForm.vue'
 const images = ref<ImageData[]>([])
 const maxFileSize = ref(10)
 const compressors = ref<ImageCollectionCompressor | null>(null)
-const pdfOptions = ref<PdfOptions>({ title: null })
+const pdfOptions = ref<PdfOptions>({ title: null, resizeMode: 'matchWidth' })
 
 // Computed properties
 const totalSize = computed(() => images.value.reduce((acc, image) => acc + image.size, 0))

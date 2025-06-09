@@ -4,12 +4,35 @@ import { ImageBlob } from '@/models/ImageData'
 
 export interface PdfOptions {
   title: string | null
+  resizeMode: 'matchWidth' | 'matchHeight'
+}
+
+const MAX_SIZE = 297 // millimeters
+
+/** Calculate the scaled image dimensions based on the resize mode */
+function calculatePageSize(
+  imWidth: number,
+  imHeight: number,
+  resizeMode: PdfOptions['resizeMode'],
+): [width: number, height: number] {
+  const ratio = imHeight / imWidth
+
+  switch (resizeMode) {
+    case 'matchWidth':
+      return [MAX_SIZE, ratio * MAX_SIZE]
+    case 'matchHeight':
+      return [MAX_SIZE / ratio, MAX_SIZE]
+  }
+}
+
+/** Convert image blob to array buffer for jsPDF */
+async function imageToArrayBuffer(blob: Blob): Promise<Uint8Array> {
+  const arrayBuffer = await blob.arrayBuffer()
+  return new Uint8Array(arrayBuffer)
 }
 
 /** Generate a PDF from a collection of image data */
-async function generatePDF(images: ImageBlob[], options: PdfOptions) {
-  // Use millimeters for units
-  const WIDTH = 297
+async function generatePDF(images: ImageBlob[], options: PdfOptions): Promise<void> {
   const doc = new jsPDF({ unit: 'mm' })
   doc.deletePage(1) // delete the default blank page
 
@@ -17,16 +40,18 @@ async function generatePDF(images: ImageBlob[], options: PdfOptions) {
     doc.setProperties({ title: options.title })
   }
 
-  for (let i = 0; i < images.length; i++) {
-    const image = images[i]
-    const ratio = image.height / image.width
-    // jsPDF will flip the dimensions automatically according to the orientation
-    // and we don't want that
-    // https://github.com/parallax/jsPDF/blob/57cbe9499dc9922c1a8dbdd225f9c45364653324/src/jspdf.js#L2741
-    doc.addPage([WIDTH, ratio * WIDTH], ratio > 1 ? 'p' : 'l')
-    const data = await image.blob.arrayBuffer()
-    doc.addImage(new Uint8Array(data), 'JPEG', 0, 0, WIDTH, ratio * WIDTH, '', 'NONE')
+  for (const image of images) {
+    const [width, height] = calculatePageSize(image.width, image.height, options.resizeMode)
+    const isPortrait = height > width
+
+    // jsPDF will flip dimensions automatically according to orientation
+    // We prevent this by explicitly setting the orientation
+    doc.addPage([width, height], isPortrait ? 'p' : 'l')
+
+    const imageData = await imageToArrayBuffer(image.blob)
+    doc.addImage(imageData, 'JPEG', 0, 0, width, height, '', 'NONE')
   }
+
   doc.save('images.pdf')
 }
 
